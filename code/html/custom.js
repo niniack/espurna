@@ -372,7 +372,7 @@ function checkTempRangeMin() {
         $("#tempRangeMinInput").val(max - 1);
     }
 }
-  
+
 function checkTempRangeMax() {
     var min = parseInt($("#tempRangeMinInput").val(), 10);
     var max = parseInt($("#tempRangeMaxInput").val(), 10);
@@ -1157,6 +1157,43 @@ function initChannels(num) {
     });
 
 }
+
+function addDeviceOrientationListener(){
+  if (window.DeviceOrientationEvent){
+      window.addEventListener('deviceorientation', deviceOrientationToColor)
+  }
+}
+
+function deviceOrientationToColor(event){
+
+  var rotation_x = event.beta;
+  var rotation_y = event.gamma;
+  var rotation_z = event.alpha;
+
+  //device orientation range to color range
+  const map_ratio = 255/360;
+
+  //mapping values from 360 to 255 to HEX and cleaning (e.g. 'f' --> '0f')
+  var _rotationToHex = function(rotation){
+    var hex = Math.round((rotation-360) * map_ratio + 255).toString(16);
+    if (hex.length < 2){
+      hex = "0" + hex;
+    }
+    return hex;
+  }
+
+  //rgb assignments
+  var red = _rotationToHex(rotation_x)
+  var green = _rotationToHex(rotation_y)
+  var blue = _rotationToHex(rotation_z)
+
+  //payload construction
+  var value = "#" + red + green + blue;
+
+  //sending to socket
+  sendAction("color", {rgb: value});
+}
+
 <!-- endRemoveIf(!light)-->
 
 // -----------------------------------------------------------------------------
@@ -1435,6 +1472,11 @@ function processData(data) {
         if ("useCCT" === key) {
             initCCT();
             useCCT = value;
+        }
+
+        if ("useDeviceOrientation" === key) {
+            useDeviceOrientation = value;
+            addDeviceOrientationListener();
         }
 
         <!-- endRemoveIf(!light)-->
